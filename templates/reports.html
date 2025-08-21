@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tournament Reports</title>
+    <!-- Include Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <!-- Main Header -->
+    <header class="w-full bg-gray-800 py-8 text-center">
+        <h1 class="text-white text-4xl font-semibold uppercase tracking-wider">THE RENDERED RIVALRY CUP</h1>
+    </header>
+
+    <!-- Main Content Container -->
+    <div class="w-full px-4 sm:px-6 lg:px-8 mt-8">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <!-- Controls Area -->
+            <div class="p-6 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <select id="tournament-select" class="bg-white border border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Select a Tournament --</option>
+                    </select>
+                    <button onclick="window.print()" class="px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors duration-300">🖨️ Print Report</button>
+                </div>
+                <a href="/" class="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors duration-300">Back to Home</a>
+            </div>
+
+            <!-- Report Title -->
+            <div id="season-subtitle" class="text-center text-3xl font-bold text-gray-800 py-8">Select a season to view details</div>
+
+            <!-- Report Content (Standings & Fixtures) -->
+            <main id="report-content" class="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <p class="text-gray-500 text-center col-span-full">Select a tournament from the dropdown to generate its report.</p>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            const tournamentSelect = document.getElementById('tournament-select');
+            const reportContent = document.getElementById('report-content');
+            const seasonSubtitle = document.getElementById('season-subtitle');
+
+            fetch('/api/tournaments')
+                .then(response => response.json())
+                .then(tournaments => {
+                    tournaments.forEach(tourney => {
+                        const option = new Option(`Season ${tourney.season_number} (Created: ${new Date(tourney.created_date).toLocaleDateString()})`, tourney.tournament_id);
+                        tournamentSelect.add(option);
+                    });
+                });
+
+            tournamentSelect.addEventListener('change', function() {
+                const tournamentId = this.value;
+                if (!tournamentId) {
+                    reportContent.innerHTML = '<p class="text-gray-500 text-center col-span-full">Select a tournament from the dropdown to generate its report.</p>';
+                    seasonSubtitle.textContent = 'Select a season to view details';
+                    return;
+                }
+                reportContent.innerHTML = '<div class="text-center col-span-full text-gray-500">Loading Report...</div>';
+
+                fetch(`/api/tournaments/${tournamentId}`)
+                    .then(response => response.json())
+                    .then(data => renderReport(data));
+            });
+
+            function renderReport(data) {
+                seasonSubtitle.textContent = `Season ${data.season_number} Report`;
+
+                // --- STANDINGS SECTION CHANGE ---
+                let standingsHtml = '<div class="lg:col-span-1"> <h2 class="text-2xl font-bold text-gray-800 mb-4">Standings</h2>';
+                // Add the new scrollable container here
+                standingsHtml += '<div class="h-[70vh] overflow-y-auto pr-2">'; // pr-2 adds a little padding for the scrollbar
+                for (const groupName in data.standings) {
+                    standingsHtml += `<p class="text-lg font-semibold text-gray-700 mt-6 mb-2">Group ${groupName}</p>`;
+                    standingsHtml += renderStandingsTable(data.standings[groupName], data.settings.qualifiers_per_group);
+                }
+                standingsHtml += '</div></div>'; // Close the scrollable div and the main column div
+
+                // --- FIXTURES SECTION CHANGE ---
+                let fixturesHtml = '<div class="lg:col-span-1"> <h2 class="text-2xl font-bold text-gray-800 mb-4">Fixtures & Results</h2>';
+                // Add the new scrollable container here
+                fixturesHtml += '<div class="h-[70vh] overflow-y-auto pr-2">'; // pr-2 for padding
+                fixturesHtml += renderFixturesTable(data.fixtures);
+                fixturesHtml += '</div></div>'; // Close the scrollable div and the main column div
+
+                reportContent.innerHTML = standingsHtml + fixturesHtml;
+            }
+
+            function renderStandingsTable(teams, qualifiers) {
+                // <<< BUG FIX IS HERE >>>
+                // Wrapped the table in a div with overflow-x-auto to handle horizontal scrolling.
+                let table = '<div><table class="w-full text-sm text-left text-gray-500"> <thead class="text-xs text-gray-700 uppercase bg-gray-50"> <tr> <th class="px-4 py-3">#</th> <th class="px-4 py-3">Team</th> <th class="px-4 py-3 text-center">MP</th> <th class="px-4 py-3 text-center">W</th> <th class="px-4 py-3 text-center">D</th> <th class="px-4 py-3 text-center">L</th> <th class="px-4 py-3 text-center">GF</th> <th class="px-4 py-3 text-center">GA</th> <th class="px-4 py-3 text-center">GD</th> <th class="px-4 py-3 text-center">Pts</th> </tr> </thead> <tbody>';
+                teams.forEach((team, index) => {
+                    const isQualifier = (index < qualifiers) ? 'bg-green-50' : 'bg-white';
+                    table += `<tr class="${isQualifier} border-b hover:bg-gray-50">
+                        <td class="px-4 py-3 font-medium text-gray-900">${index + 1}</td>
+                        <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap text-sm max-w-[120px] truncate">${team.name}</td>
+                        <td class="px-4 py-3 text-center">${team.matches_played}</td> <td class="px-4 py-3 text-center">${team.wins}</td> <td class="px-4 py-3 text-center">${team.draws}</td> <td class="px-4 py-3 text-center">${team.losses}</td>
+                        <td class="px-4 py-3 text-center">${team.goals_for}</td> <td class="px-4 py-3 text-center">${team.goals_against}</td> <td class="px-4 py-3 text-center">${team.goal_difference}</td>
+                        <td class="px-4 py-3 text-center font-bold text-gray-900">${team.points}</td>
+                    </tr>`;
+                });
+                return table + '</tbody></table></div>';
+            }
+
+            function renderFixturesTable(fixtures) {
+                let table = '<div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-500"> <thead class="text-xs text-gray-700 uppercase bg-gray-50"> <tr> <th class="px-4 py-3">Match</th> <th class="px-4 py-3">Stage</th> <th class="px-4 py-3 text-right">Team 1</th> <th class="px-4 py-3 text-center">Score</th> <th class="px-4 py-3">Team 2</th> </tr> </thead> <tbody>';
+                fixtures.forEach(match => {
+                    let score = '<span class="text-gray-400">vs</span>';
+                    let team1Name = match.team1_name;
+                    let team2Name = match.team2_name;
+                    if (match.status === 'Played') {
+                        score = `${match.team1_goals} - ${match.team2_goals}`;
+                        if (match.team1_pso !== null) {
+                            score += ` (${match.team1_pso}-${match.team2_pso} pens)`;
+                            if(match.team1_pso > match.team2_pso) team1Name = `<span class="font-bold text-green-600">${match.team1_name}</span>`;
+                            else team2Name = `<span class="font-bold text-green-600">${match.team2_name}</span>`;
+                        } else {
+                            if(match.team1_goals > match.team2_goals) team1Name = `<span class="font-bold text-green-600">${match.team1_name}</span>`;
+                            else if (match.team2_goals > match.team1_goals) team2Name = `<span class="font-bold text-green-600">${match.team2_name}</span>`;
+                        }
+                    }
+                    table += `<tr class="bg-white border-b hover:bg-gray-50">
+                        <td class="px-4 py-3">${match.display_no}</td> <td class="px-4 py-3 whitespace-nowrap">${match.stage}</td>
+                        <td class="px-4 py-3 text-right font-medium">${team1Name}</td> <td class="px-4 py-3 text-center font-bold text-lg">${score}</td> <td class="px-4 py-3 font-medium">${team2Name}</td>
+                    </tr>`;
+                });
+                return table + '</tbody></table></div>';
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Tournament</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="w-full bg-gray-800 py-8 text-center">
+        <h1 class="text-white text-4xl font-semibold uppercase tracking-wider">THE RENDERED RIVALRY CUP</h1>
+    </header>
+
+    <div class="container mx-auto max-w-6xl mt-8">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="p-6 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center justify-between gap-4">
+                <h2 class="text-2xl font-bold text-gray-800">Manage Season {{ tournament.season_number }}</h2>
+                <!-- <<< NEW BUTTON ADDED HERE >>> -->
+                <div class="flex items-center gap-4">
+                    <button onclick="autogenerateResults({{ tournament.tournament_id }})" class="px-4 py-2 text-white bg-yellow-500 rounded-lg hover:bg-yellow-600 transition-colors duration-300">⚡ Autogenerate Group Results</button>
+                    <a href="/admin/dashboard" class="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors duration-300">Back to Dashboard</a>
+                </div>
+            </div>
+
+            <main class="p-6 md:p-8">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3">Match</th>
+                                <th class="px-4 py-3">Stage</th>
+                                <th class="px-4 py-3">Teams</th>
+                                <th class="px-4 py-3">Result</th>
+                                <th class="px-4 py-3">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for match in fixtures %}
+                            <tr class="bg-white border-b hover:bg-gray-50">
+                                <td class="px-4 py-4">{{ loop.index }}</td>
+                                <td class="px-4 py-4 whitespace-nowrap">{{ match.stage }}</td>
+                                <td class="px-4 py-4 font-medium">
+                                    {{ match.team1_name or 'TBD' }} <span class="text-gray-400">vs</span> {{ match.team2_name or 'TBD' }}
+                                </td>
+                                <td class="px-4 py-4">
+                                    <form id="form-{{ match.match_no }}" class="flex items-center gap-2">
+                                        <input type="number" name="team1_goals" value="{{ match.team1_goals if match.team1_goals is not none }}" placeholder="G1" class="w-14 p-1 border rounded text-center">
+                                        <span>-</span>
+                                        <input type="number" name="team2_goals" value="{{ match.team2_goals if match.team2_goals is not none }}" placeholder="G2" class="w-14 p-1 border rounded text-center">
+                                        
+                                        {% if 'Group' not in match.stage and 'League' not in match.stage %}
+                                        <span class="text-xs text-gray-400 ml-2">Pens:</span>
+                                        <input type="number" name="pso_t1" value="{{ match.team1_pso if match.team1_pso is not none }}" placeholder="P1" class="w-12 p-1 border rounded text-center">
+                                        <span>-</span>
+                                        <input type="number" name="pso_t2" value="{{ match.team2_pso if match.team2_pso is not none }}" placeholder="P2" class="w-12 p-1 border rounded text-center">
+                                        {% endif %}
+                                        <input type="hidden" name="match_no" value="{{ match.match_no }}">
+                                    </form>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <button onclick="submitResult('{{ match.match_no }}')" class="px-4 py-2 text-xs font-bold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">Save</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        function submitResult(matchNo) {
+            const form = document.getElementById(`form-${matchNo}`);
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            fetch('/api/admin/update_result', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                alert(result.message);
+                if (result.success) {
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An unexpected error occurred.');
+            });
+        }
+
+        // <<< NEW JAVASCRIPT FUNCTION FOR AUTOGENERATING RESULTS >>>
+        function autogenerateResults(tournamentId) {
+            if (confirm('Are you sure you want to generate random results for all remaining group stage matches? This cannot be undone.')) {
+                fetch(`/api/admin/autogenerate/${tournamentId}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(result => {
+                    alert(result.message);
+                    if (result.success) {
+                        window.location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An unexpected error occurred.');
+                });
+            }
+        }
+    </script>
+
+</body>
+</html>

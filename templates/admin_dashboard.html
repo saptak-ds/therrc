@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <!-- Include Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <!-- Main Header -->
+    <header class="w-full bg-gray-800 py-8 text-center">
+        <h1 class="text-white text-4xl font-semibold uppercase tracking-wider">THE RENDERED RIVALRY CUP</h1>
+    </header>
+
+    <!-- Main Content Container -->
+    <div class="container mx-auto max-w-4xl mt-8">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <!-- Subheader -->
+            <div class="p-6 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                <h2 class="text-2xl font-bold text-gray-800">Admin Dashboard</h2>
+                <a href="/admin/logout" class="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors duration-300">Logout</a>
+            </div>
+
+            <main class="p-6 md:p-8">
+                <!-- Create New Tournament Section -->
+                <section class="mb-8">
+                    <h3 class="text-xl font-bold text-gray-700 mb-4 pb-2 border-b">Create New Tournament</h3>
+                    <form id="create-tournament-form" class="space-y-6">
+                        <!-- Form content is unchanged -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label for="season-number" class="block mb-2 text-sm font-bold text-gray-700">Season Number</label>
+                                <input type="number" id="season-number" name="season_number" required class="w-full px-4 py-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="num-groups" class="block mb-2 text-sm font-bold text-gray-700">Number of Groups</label>
+                                <select id="num-groups" name="num_groups" class="w-full px-4 py-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="1">1 (League Mode)</option>
+                                    <option value="2">2 Groups</option>
+                                    <option value="4">4 Groups</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="num-teams-per-group" class="block mb-2 text-sm font-bold text-gray-700">Teams per Group</label>
+                                <input type="number" id="num-teams-per-group" name="num_teams_per_group" required class="w-full px-4 py-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        <button type="button" id="generate-team-fields" class="px-5 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors duration-300">Next: Enter Team Names</button>
+                        <div id="teams-entry" style="display:none;" class="pt-6 border-t">
+                            <h4 class="text-lg font-bold text-gray-700 mb-4">Enter Team Names</h4>
+                            <div id="team-fields-container" class="space-y-4"></div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 mt-6 border-t">
+                                <div>
+                                    <label for="knockout-mode" class="block mb-2 text-sm font-bold text-gray-700">Knockout Format</label>
+                                    <select id="knockout-mode" name="knockout_mode" required class="w-full px-4 py-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+                                </div>
+                                <div>
+                                    <label for="num-legs" class="block mb-2 text-sm font-bold text-gray-700">Group Stage Legs</label>
+                                    <input type="number" id="num-legs" name="num_legs" value="1" required class="w-full px-4 py-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+                            <button type="submit" class="mt-6 w-full md:w-auto px-6 py-3 text-lg font-bold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-300">Create Tournament</button>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- Existing Tournaments Section (MODIFIED) -->
+                <section>
+                    <h3 class="text-xl font-bold text-gray-700 mb-4 pb-2 border-b">Manage Existing Tournaments</h3>
+                    <div class="space-y-3">
+                        {% for t in tournaments %}
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 flex justify-between items-center">
+                                <a href="/admin/manage/{{ t.tournament_id }}" class="flex-grow hover:text-blue-600">
+                                    <span class="font-semibold">Season {{ t.season_number }}</span>
+                                    <span class="text-sm text-gray-500 ml-4">(ID: {{ t.tournament_id }}) - Created: {{ t.created_date }}</span>
+                                </a>
+                                <!-- <<< NEW DELETE BUTTON >>> -->
+                                <button onclick="deleteTournament({{ t.tournament_id }}, {{ t.season_number }})" class="ml-4 px-3 py-1 text-xs font-bold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors">
+                                    Delete
+                                </button>
+                            </div>
+                        {% else %}
+                            <p class="text-gray-500">No tournaments created yet.</p>
+                        {% endfor %}
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Create tournament script is unchanged
+        const generateBtn = document.getElementById('generate-team-fields');
+        const teamsEntryDiv = document.getElementById('teams-entry');
+        const container = document.getElementById('team-fields-container');
+        const numGroupsSelect = document.getElementById('num-groups');
+        const numTeamsInput = document.getElementById('num-teams-per-group');
+        const knockoutSelect = document.getElementById('knockout-mode');
+        generateBtn.addEventListener('click', () => {
+            const numGroups = parseInt(numGroupsSelect.value), numTeams = parseInt(numTeamsInput.value);
+            if (isNaN(numGroups) || isNaN(numTeams) || numTeams <= 0) { alert("Please enter a valid number of teams."); return; }
+            container.innerHTML = '';
+            const groupNames = ['A', 'B', 'C', 'D'];
+            for (let i = 0; i < numGroups; i++) {
+                const groupName = groupNames[i], groupLabel = (numGroups === 1) ? 'League Teams' : `Group ${groupName} Teams`;
+                let groupHtml = `<h5 class="font-semibold text-gray-600">${groupLabel}</h5> <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 pl-4 border-l-2 border-gray-200">`;
+                for (let j = 0; j < numTeams; j++) { groupHtml += `<div class="flex items-center gap-2"> <label class="text-sm text-gray-500">Team ${j + 1}:</label> <input type="text" name="team_${groupName}_${j}" required class="w-full px-3 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"> </div>`; }
+                groupHtml += `</div>`;
+                container.innerHTML += groupHtml;
+            }
+            updateKnockoutOptions(numGroups, numTeams);
+            teamsEntryDiv.style.display = 'block';
+        });
+        function updateKnockoutOptions(numGroups, numTeams) {
+            knockoutSelect.innerHTML = '';
+            const validModes = {};
+            if (numGroups == 1) {
+                if (numTeams >= 2) validModes['1'] = "Finals Only (Top 2)";
+                if (numTeams >= 4) validModes['2'] = "Semi-Finals & Final (Top 4)";
+                if (numTeams >= 8) validModes['3'] = "Quarter-Finals, etc. (Top 8)";
+            } else if (numGroups == 2) {
+                if (numTeams >= 1) validModes['1'] = "Finals Only (Top 1 per group)";
+                if (numTeams >= 2) validModes['2'] = "Semi-Finals & Final (Top 2 per group)";
+                if (numTeams >= 4) validModes['3'] = "Quarter-Finals, etc. (Top 4 per group)";
+            } else if (numGroups == 4) {
+                if (numTeams >= 1) validModes['2'] = "Semi-Finals & Final (Top 1 per group)";
+                if (numTeams >= 2) validModes['3'] = "Quarter-Finals, etc. (Top 2 per group)";
+            }
+            for (const [key, text] of Object.entries(validModes)) { knockoutSelect.add(new Option(text, key)); }
+        }
+        document.getElementById('create-tournament-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetch('/api/admin/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(Object.fromEntries(new FormData(this)))
+            }).then(res => res.json()).then(result => {
+                alert(result.message);
+                if(result.success) window.location.reload();
+            });
+        });
+
+        // <<< NEW JAVASCRIPT FUNCTION FOR DELETING >>>
+        function deleteTournament(tournamentId, seasonNumber) {
+            // A simple confirmation dialog to prevent accidental deletion
+            if (confirm(`Are you sure you want to permanently delete Season ${seasonNumber}? This action cannot be undone.`)) {
+                fetch(`/api/admin/delete/${tournamentId}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(result => {
+                    alert(result.message);
+                    if (result.success) {
+                        window.location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An unexpected error occurred during deletion.');
+                });
+            }
+        }
+    </script>
+</body>
+</html>
