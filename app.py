@@ -24,9 +24,10 @@ def index():
     return render_template('index.html')
 
 @app.route('/reports')
-def reports():
+@app.route('/reports/<int:tournament_id>')
+def reports(tournament_id=None):
     """Renders the public reports page."""
-    return render_template('reports.html')
+    return render_template('reports.html', preselected_id=tournament_id)
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_login():
@@ -222,4 +223,4 @@ def autogenerate_api(tournament_id):
 
 # --- Main Execution ---
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)

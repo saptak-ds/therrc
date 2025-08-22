@@ -1,136 +1,304 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Tournament Reports</title>
     <!-- Include Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 font-sans">
-
+  </head>
+  <body class="bg-gray-100 font-sans">
     <!-- Main Header -->
     <header class="w-full bg-gray-800 py-8 text-center">
-        <h1 class="text-white text-4xl font-semibold uppercase tracking-wider">THE RENDERED RIVALRY CUP</h1>
+      <h1 class="text-white text-4xl font-semibold uppercase tracking-wider">
+        THE RENDERED RIVALRY CUP
+      </h1>
     </header>
 
     <!-- Main Content Container -->
     <div class="w-full px-4 sm:px-6 lg:px-8 mt-8">
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-            <!-- Controls Area -->
-            <div class="p-6 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center justify-between gap-4">
-                <div class="flex items-center gap-4">
-                    <select id="tournament-select" class="bg-white border border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">-- Select a Tournament --</option>
-                    </select>
-                    <button onclick="window.print()" class="px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors duration-300">🖨️ Print Report</button>
-                </div>
-                <a href="/" class="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors duration-300">Back to Home</a>
-            </div>
-
-            <!-- Report Title -->
-            <div id="season-subtitle" class="text-center text-3xl font-bold text-gray-800 py-8">Select a season to view details</div>
-
-            <!-- Report Content (Standings & Fixtures) -->
-            <main id="report-content" class="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <p class="text-gray-500 text-center col-span-full">Select a tournament from the dropdown to generate its report.</p>
-            </main>
+      <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <!-- Controls Area -->
+        <div
+          class="p-6 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center justify-between gap-4"
+        >
+          <div class="flex items-center gap-4">
+            <select
+              id="tournament-select"
+              class="bg-white border border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">-- Select a Tournament --</option>
+            </select>
+            <button
+              onclick="window.print()"
+              class="px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors duration-300"
+            >
+              🖨️ Print Report
+            </button>
+          </div>
+          <a
+            href="/"
+            class="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors duration-300"
+            >Back to Home</a
+          >
         </div>
+
+        <!-- Report Title -->
+        <div
+          id="season-subtitle"
+          class="text-center text-2xl font-bold text-white uppercase bg-gradient-to-r from-slate-700 to-slate-800 py-4 tracking-widest shadow-inner"
+        >
+          Select a season to view details
+        </div>
+
+        <!-- Report Content (Standings & Fixtures) -->
+        <main
+          id="report-content"
+          class="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4"
+        >
+          <p class="text-gray-500 text-center col-span-full">
+            Select a tournament from the dropdown to generate its report.
+          </p>
+        </main>
+      </div>
     </div>
 
     <script>
-        window.onload = function() {
-            const tournamentSelect = document.getElementById('tournament-select');
-            const reportContent = document.getElementById('report-content');
-            const seasonSubtitle = document.getElementById('season-subtitle');
+      // --- GLOBAL VARIABLE ---
+      // This will store the full data for the currently selected tournament
+      // so we don't have to re-fetch it every time we change a filter.
+      let currentTournamentData = null;
 
-            fetch('/api/tournaments')
-                .then(response => response.json())
-                .then(tournaments => {
-                    tournaments.forEach(tourney => {
-                        const option = new Option(`Season ${tourney.season_number} (Created: ${new Date(tourney.created_date).toLocaleDateString()})`, tourney.tournament_id);
-                        tournamentSelect.add(option);
-                    });
-                });
 
-            tournamentSelect.addEventListener('change', function() {
-                const tournamentId = this.value;
-                if (!tournamentId) {
-                    reportContent.innerHTML = '<p class="text-gray-500 text-center col-span-full">Select a tournament from the dropdown to generate its report.</p>';
-                    seasonSubtitle.textContent = 'Select a season to view details';
-                    return;
-                }
-                reportContent.innerHTML = '<div class="text-center col-span-full text-gray-500">Loading Report...</div>';
+      // --- HELPER & RENDERING FUNCTIONS ---
 
-                fetch(`/api/tournaments/${tournamentId}`)
-                    .then(response => response.json())
-                    .then(data => renderReport(data));
-            });
+      function renderStandingsTable(teams, qualifiers) {
+          let table = '<div><table class="w-full text-sm text-left text-gray-500"> <thead class="text-xs text-gray-700 uppercase bg-gray-50"> <tr> <th class="px-4 py-3">#</th> <th class="px-4 py-3">Team</th> <th class="px-4 py-3 text-center">MP</th> <th class="px-4 py-3 text-center">W</th> <th class="px-4 py-3 text-center">D</th> <th class="px-4 py-3 text-center">L</th> <th class="px-4 py-3 text-center">GF</th> <th class="px-4 py-3 text-center">GA</th> <th class="px-4 py-3 text-center">GD</th> <th class="px-4 py-3 text-center">Pts</th> </tr> </thead> <tbody>';
+          teams.forEach((team, index) => {
+              const isQualifier = (index < qualifiers) ? 'bg-green-50' : 'bg-white';
+              table += `<tr class="${isQualifier} border-b hover:bg-gray-50">
+                  <td class="px-4 py-3 font-medium text-gray-900">${index + 1}</td>
+                  <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap text-sm max-w-[120px] truncate">${team.name}</td>
+                  <td class="px-4 py-3 text-center">${team.matches_played}</td>
+                  <td class="px-4 py-3 text-center">${team.wins}</td>
+                  <td class="px-4 py-3 text-center">${team.draws}</td>
+                  <td class="px-4 py-3 text-center">${team.losses}</td>
+                  <td class="px-4 py-3 text-center">${team.goals_for}</td>
+                  <td class="px-4 py-3 text-center">${team.goals_against}</td>
+                  <td class="px-4 py-3 text-center">${team.goal_difference}</td>
+                  <td class="px-4 py-3 text-center font-bold text-gray-900">${team.points}</td>
+              </tr>`;
+          });
+          return table + '</tbody></table></div>';
+      }
 
-            function renderReport(data) {
-                seasonSubtitle.textContent = `Season ${data.season_number} Report`;
+      function renderFixturesTable(fixtures) {
+          const fixturesByStage = fixtures.reduce((acc, match) => {
+              const stage = match.stage;
+              const stageKey = (stage.includes('Group') || stage === 'League') ? 'League Stage' : stage;
+              if (!acc[stageKey]) { acc[stageKey] = []; }
+              acc[stageKey].push(match);
+              return acc;
+          }, {});
 
-                // --- STANDINGS SECTION CHANGE ---
-                let standingsHtml = '<div class="lg:col-span-1"> <h2 class="text-2xl font-bold text-gray-800 mb-4">Standings</h2>';
-                // Add the new scrollable container here
-                standingsHtml += '<div class="h-[70vh] overflow-y-auto pr-2">'; // pr-2 adds a little padding for the scrollbar
-                for (const groupName in data.standings) {
-                    standingsHtml += `<p class="text-lg font-semibold text-gray-700 mt-6 mb-2">Group ${groupName}</p>`;
-                    standingsHtml += renderStandingsTable(data.standings[groupName], data.settings.qualifiers_per_group);
-                }
-                standingsHtml += '</div></div>'; // Close the scrollable div and the main column div
+          const stageOrder = ['League Stage', 'Quarter-Final', 'Semi-Final', 'Final'];
+          const stageStyles = {
+              'League Stage':    { header: 'bg-gray-100 text-gray-800', row: 'bg-white' },
+              'Quarter-Final': { header: 'bg-blue-100 text-blue-800 font-bold', row: 'bg-blue-50' },
+              'Semi-Final':    { header: 'bg-indigo-100 text-indigo-800 font-bold', row: 'bg-indigo-50' },
+              'Final':         { header: 'bg-amber-100 text-amber-800 font-bold', row: 'bg-amber-50' }
+          };
 
-                // --- FIXTURES SECTION CHANGE ---
-                let fixturesHtml = '<div class="lg:col-span-1"> <h2 class="text-2xl font-bold text-gray-800 mb-4">Fixtures & Results</h2>';
-                // Add the new scrollable container here
-                fixturesHtml += '<div class="h-[70vh] overflow-y-auto pr-2">'; // pr-2 for padding
-                fixturesHtml += renderFixturesTable(data.fixtures);
-                fixturesHtml += '</div></div>'; // Close the scrollable div and the main column div
+          const winnerMap = {};
+          fixtures.forEach(match => {
+              if (match.status === 'Played' && (match.stage === 'Quarter-Final' || match.stage === 'Semi-Final')) {
+                  const placeholder = `Winner ${match.stage} ${match.round_in_stage}`;
+                  let winnerName = match.team1_pso > match.team2_pso ? match.team1_name : match.team2_name;
+                  winnerMap[placeholder] = winnerName;
+              }
+          });
 
-                reportContent.innerHTML = standingsHtml + fixturesHtml;
-            }
+          let finalHtml = '<div class="space-y-6">';
+          stageOrder.forEach(stageName => {
+              if (fixturesByStage[stageName] && fixturesByStage[stageName].length > 0) {
+                  const style = stageStyles[stageName];
+                  const matches = fixturesByStage[stageName];
+                  finalHtml += `<h4 class="text-lg font-semibold uppercase tracking-wider p-2 rounded-t-lg ${style.header}">${stageName}</h4>`;
+                  let table = '<div class="overflow-hidden border-x border-b rounded-b-lg"><table class="w-full text-sm text-left text-gray-500"> <thead class="text-xs text-gray-700 uppercase bg-gray-50"> <tr> <th class="px-4 py-3">Match</th> <th class="px-4 py-3">Stage</th> <th class="px-4 py-3 text-right">Team 1</th> <th class="px-4 py-3 text-center">Score</th> <th class="px-4 py-3">Team 2</th> </tr> </thead> <tbody>';
+                  matches.forEach(match => {
+                      let score = '<span class="text-gray-400">vs</span>';
+                      let team1Name = winnerMap[match.team1_name] || match.team1_name || 'TBD';
+                      let team2Name = winnerMap[match.team2_name] || match.team2_name || 'TBD';
+                      let resultSummary = '';
+                      let detailedStageName = match.stage === 'Quarter-Final' ? `QF ${match.round_in_stage}` : match.stage === 'Semi-Final' ? `SF ${match.round_in_stage}` : match.stage;
+                      if (match.status === 'Played') {
+                          score = `${match.team1_goals} - ${match.team2_goals}`;
+                          if (match.team1_pso !== null) {
+                              score += ` (${match.team1_pso}-${match.team2_pso} pens)`;
+                              let winner = match.team1_pso > match.team2_pso ? team1Name : team2Name;
+                              resultSummary = `<span class="text-xs text-gray-500">${winner} won on penalties</span>`;
+                              if(match.team1_pso > match.team2_pso) team1Name = `<span class="font-bold text-green-600">${team1Name}</span>`; else team2Name = `<span class="font-bold text-green-600">${team2Name}</span>`;
+                          } else {
+                              if (match.team1_goals > match.team2_goals) {
+                                  let diff = match.team1_goals - match.team2_goals;
+                                  resultSummary = `<span class="text-xs text-gray-500">${team1Name} won by ${diff} goal${diff > 1 ? 's' : ''}</span>`;
+                                  team1Name = `<span class="font-bold text-green-600">${team1Name}</span>`;
+                              } else if (match.team2_goals > match.team1_goals) {
+                                  let diff = match.team2_goals - match.team1_goals;
+                                  resultSummary = `<span class="text-xs text-gray-500">${team2Name} won by ${diff} goal${diff > 1 ? 's' : ''}</span>`;
+                                  team2Name = `<span class="font-bold text-green-600">${team2Name}</span>`;
+                              } else {
+                                  resultSummary = `<span class="text-xs text-gray-500">Match Drawn</span>`;
+                              }
+                          }
+                      }
+                      table += `<tr class="${style.row} border-t hover:bg-gray-100 transition-colors">
+                          <td class="px-4 py-3 text-gray-500">${match.display_no}</td>
+                          <td class="px-4 py-3 text-gray-600 whitespace-nowrap">${detailedStageName}</td>
+                          <td class="px-4 py-3 text-right font-medium">${team1Name}</td>
+                          <td class="px-4 py-3 text-center"><div class="flex flex-col"><span class="font-bold text-lg">${score}</span>${resultSummary}</div></td>
+                          <td class="px-4 py-3 font-medium">${team2Name}</td>
+                      </tr>`;
+                  });
+                  finalHtml += table + '</tbody></table></div>';
+              }
+          });
+          return finalHtml + '</div>';
+      }
 
-            function renderStandingsTable(teams, qualifiers) {
-                // <<< BUG FIX IS HERE >>>
-                // Wrapped the table in a div with overflow-x-auto to handle horizontal scrolling.
-                let table = '<div><table class="w-full text-sm text-left text-gray-500"> <thead class="text-xs text-gray-700 uppercase bg-gray-50"> <tr> <th class="px-4 py-3">#</th> <th class="px-4 py-3">Team</th> <th class="px-4 py-3 text-center">MP</th> <th class="px-4 py-3 text-center">W</th> <th class="px-4 py-3 text-center">D</th> <th class="px-4 py-3 text-center">L</th> <th class="px-4 py-3 text-center">GF</th> <th class="px-4 py-3 text-center">GA</th> <th class="px-4 py-3 text-center">GD</th> <th class="px-4 py-3 text-center">Pts</th> </tr> </thead> <tbody>';
-                teams.forEach((team, index) => {
-                    const isQualifier = (index < qualifiers) ? 'bg-green-50' : 'bg-white';
-                    table += `<tr class="${isQualifier} border-b hover:bg-gray-50">
-                        <td class="px-4 py-3 font-medium text-gray-900">${index + 1}</td>
-                        <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap text-sm max-w-[120px] truncate">${team.name}</td>
-                        <td class="px-4 py-3 text-center">${team.matches_played}</td> <td class="px-4 py-3 text-center">${team.wins}</td> <td class="px-4 py-3 text-center">${team.draws}</td> <td class="px-4 py-3 text-center">${team.losses}</td>
-                        <td class="px-4 py-3 text-center">${team.goals_for}</td> <td class="px-4 py-3 text-center">${team.goals_against}</td> <td class="px-4 py-3 text-center">${team.goal_difference}</td>
-                        <td class="px-4 py-3 text-center font-bold text-gray-900">${team.points}</td>
-                    </tr>`;
-                });
-                return table + '</tbody></table></div>';
-            }
+      // --- NEW: FILTERING LOGIC ---
+      function applyFixtureFilters() {
+          if (!currentTournamentData) return; // Exit if no data is loaded
 
-            function renderFixturesTable(fixtures) {
-                let table = '<div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-500"> <thead class="text-xs text-gray-700 uppercase bg-gray-50"> <tr> <th class="px-4 py-3">Match</th> <th class="px-4 py-3">Stage</th> <th class="px-4 py-3 text-right">Team 1</th> <th class="px-4 py-3 text-center">Score</th> <th class="px-4 py-3">Team 2</th> </tr> </thead> <tbody>';
-                fixtures.forEach(match => {
-                    let score = '<span class="text-gray-400">vs</span>';
-                    let team1Name = match.team1_name;
-                    let team2Name = match.team2_name;
-                    if (match.status === 'Played') {
-                        score = `${match.team1_goals} - ${match.team2_goals}`;
-                        if (match.team1_pso !== null) {
-                            score += ` (${match.team1_pso}-${match.team2_pso} pens)`;
-                            if(match.team1_pso > match.team2_pso) team1Name = `<span class="font-bold text-green-600">${match.team1_name}</span>`;
-                            else team2Name = `<span class="font-bold text-green-600">${match.team2_name}</span>`;
-                        } else {
-                            if(match.team1_goals > match.team2_goals) team1Name = `<span class="font-bold text-green-600">${match.team1_name}</span>`;
-                            else if (match.team2_goals > match.team1_goals) team2Name = `<span class="font-bold text-green-600">${match.team2_name}</span>`;
-                        }
-                    }
-                    table += `<tr class="bg-white border-b hover:bg-gray-50">
-                        <td class="px-4 py-3">${match.display_no}</td> <td class="px-4 py-3 whitespace-nowrap">${match.stage}</td>
-                        <td class="px-4 py-3 text-right font-medium">${team1Name}</td> <td class="px-4 py-3 text-center font-bold text-lg">${score}</td> <td class="px-4 py-3 font-medium">${team2Name}</td>
-                    </tr>`;
-                });
-                return table + '</tbody></table></div>';
-            }
-        };
+          const filterType = document.getElementById('fixture-filter-type').value;
+          const filterValue = document.getElementById('fixture-filter-value').value;
+          let filteredFixtures = currentTournamentData.fixtures;
+
+          if (filterType === 'group' && filterValue) {
+              filteredFixtures = currentTournamentData.fixtures.filter(m => m.stage === filterValue);
+          } else if (filterType === 'team' && filterValue) {
+              filteredFixtures = currentTournamentData.fixtures.filter(m => m.team1_name === filterValue || m.team2_name === filterValue);
+          }
+
+          // Re-render only the fixtures part of the page
+          const fixturesContainer = document.getElementById('fixtures-container');
+          if(fixturesContainer) {
+              fixturesContainer.innerHTML = renderFixturesTable(filteredFixtures);
+          }
+      }
+
+      // --- MAIN REPORT RENDERING ---
+      function renderReport(data) {
+          currentTournamentData = data; // Store the fetched data globally
+          const reportContent = document.getElementById('report-content');
+          const seasonSubtitle = document.getElementById('season-subtitle');
+          seasonSubtitle.textContent = `Season ${data.season_number} Report`;
+
+          // Standings Section HTML
+          let standingsHtml = `<div class="lg:col-span-1">
+              <h2 class="text-xl font-semibold text-white bg-slate-700 uppercase tracking-wider px-4 py-2 rounded-t-lg">Standings</h2>
+              <div class="h-[70vh] overflow-y-auto pr-2 border-x border-b rounded-b-lg">`;
+          for (const groupName in data.standings) {
+              standingsHtml += `<h3 class="text-md font-bold text-gray-600 bg-gray-100 p-2 rounded-md mt-4 mx-2 mb-2">GROUP ${groupName}</h3>`;
+              standingsHtml += renderStandingsTable(data.standings[groupName], data.settings.qualifiers_per_group);
+          }
+          standingsHtml += '</div></div>';
+
+          // Fixtures Section HTML (with new filter dropdowns)
+          let fixturesHtml = `<div class="lg:col-span-1">
+              <div class="flex justify-between items-center text-white bg-slate-700 uppercase tracking-wider px-4 py-2 rounded-t-lg">
+                  <h2 class="text-xl font-semibold">Fixtures & Results</h2>
+                  <div class="flex items-center gap-2">
+                      <select id="fixture-filter-type" class="text-xs bg-slate-600 border border-slate-500 rounded p-1 focus:outline-none">
+                          <option value="all">All Fixtures</option>
+                          <option value="group" id="group-filter-option">Group Wise</option>
+                          <option value="team">Team Wise</option>
+                      </select>
+                      <select id="fixture-filter-value" class="text-xs bg-slate-600 border border-slate-500 rounded p-1 focus:outline-none" style="display: none;"></select>
+                  </div>
+              </div>
+              <div id="fixtures-container" class="h-[70vh] overflow-y-auto pr-2 border-x border-b rounded-b-lg p-4">
+                  ${renderFixturesTable(data.fixtures)}
+              </div>
+          </div>`;
+
+          reportContent.innerHTML = standingsHtml + fixturesHtml;
+
+          // --- NEW: Populate and manage filters ---
+          const filterTypeSelect = document.getElementById('fixture-filter-type');
+          const filterValueSelect = document.getElementById('fixture-filter-value');
+          const groupFilterOption = document.getElementById('group-filter-option');
+
+          // Hide group filter in league mode
+          if (data.settings.is_league_mode) {
+              groupFilterOption.style.display = 'none';
+          } else {
+              groupFilterOption.style.display = 'block';
+          }
+
+          filterTypeSelect.addEventListener('change', () => {
+              const selectedType = filterTypeSelect.value;
+              filterValueSelect.innerHTML = ''; // Clear previous options
+              filterValueSelect.style.display = 'none';
+
+              if (selectedType === 'group') {
+                  filterValueSelect.style.display = 'block';
+                  filterValueSelect.add(new Option('Select Group...', ''));
+                  Object.keys(data.standings).forEach(groupName => {
+                      filterValueSelect.add(new Option(`Group ${groupName}`, `Group ${groupName}`));
+                  });
+              } else if (selectedType === 'team') {
+                  filterValueSelect.style.display = 'block';
+                  filterValueSelect.add(new Option('Select Team...', ''));
+                  const allTeams = Object.values(data.standings).flat().map(t => t.name).sort();
+                  [...new Set(allTeams)].forEach(teamName => { // Use Set to get unique team names
+                      filterValueSelect.add(new Option(teamName, teamName));
+                  });
+              }
+              applyFixtureFilters(); // Apply filter on type change (shows all if no value is selected)
+          });
+
+          filterValueSelect.addEventListener('change', applyFixtureFilters);
+      }
+
+      // --- PAGE INITIALIZATION ---
+      window.onload = function() {
+          const tournamentSelect = document.getElementById('tournament-select');
+          const reportContent = document.getElementById('report-content');
+          const seasonSubtitle = document.getElementById('season-subtitle');
+
+          fetch('/api/tournaments')
+              .then(response => response.json())
+              .then(tournaments => {
+                  tournaments.forEach(tourney => {
+                      tournamentSelect.add(new Option(`Season ${tourney.season_number} (Created: ${new Date(tourney.created_date).toLocaleDateString()})`, tourney.tournament_id));
+                  });
+                  try {
+                      const preselectedId = {{ preselected_id|tojson }};
+                      if (preselectedId) {
+                          tournamentSelect.value = preselectedId;
+                          tournamentSelect.dispatchEvent(new Event('change'));
+                      }
+                  } catch (e) { console.error("Could not process preselected ID.", e); }
+              });
+
+          tournamentSelect.addEventListener('change', function() {
+              const tournamentId = this.value;
+              const newUrl = tournamentId ? `/reports/${tournamentId}` : '/reports';
+              window.history.pushState({path: newUrl}, '', newUrl);
+
+              if (!tournamentId) {
+                  reportContent.innerHTML = '<p class="text-gray-500 text-center col-span-full">Select a tournament from the dropdown.</p>';
+                  seasonSubtitle.textContent = 'Select a season to view details';
+                  currentTournamentData = null; // Clear data when no tournament is selected
+                  return;
+              }
+
+              reportContent.innerHTML = '<div class="text-center col-span-full text-gray-500">Loading Report...</div>';
+              fetch(`/api/tournaments/${tournamentId}`)
+                  .then(response => response.json())
+                  .then(data => renderReport(data));
+          });
+      };
     </script>
-</body>
+  </body>
 </html>
