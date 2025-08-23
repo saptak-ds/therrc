@@ -72,6 +72,13 @@ def manage_tournament(tournament_id):
     fixtures = db_manager.get_all_fixtures(tournament_id)
     return render_template('manage_tournament.html', tournament=tournament_info, fixtures=fixtures)
 
+# --- Add this new route to app.py ---
+
+@app.route('/about')
+def about():
+    """Renders the new about page."""
+    return render_template('about.html', active_page='about')
+
 @app.route('/admin/logout')
 def logout():
     session.pop('logged_in', None)
