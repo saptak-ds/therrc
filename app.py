@@ -23,11 +23,25 @@ def index():
     """Renders the main homepage."""
     return render_template('index.html')
 
+# --- NEW: Standings Page Route ---
+@app.route('/standings')
+@app.route('/standings/<int:tournament_id>')
+def standings(tournament_id=None):
+    """Renders the dedicated standings page."""
+    return render_template('standings.html', preselected_id=tournament_id, active_page='standings')
+
+# --- NEW: Fixtures Page Route ---
+@app.route('/fixtures')
+@app.route('/fixtures/<int:tournament_id>')
+def fixtures(tournament_id=None):
+    """Renders the dedicated fixtures page."""
+    return render_template('fixtures.html', preselected_id=tournament_id, active_page='fixtures')
+
 @app.route('/reports')
 @app.route('/reports/<int:tournament_id>')
 def reports(tournament_id=None):
     """Renders the public reports page."""
-    return render_template('reports.html', preselected_id=tournament_id)
+    return render_template('reports.html', preselected_id=tournament_id, active_page='reports')
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_login():
@@ -63,7 +77,7 @@ def logout():
     session.pop('logged_in', None)
     return redirect(url_for('index'))
 
-# --- API Routes ---
+# --- API Routes (No changes needed here) ---
 
 @app.route('/api/tournaments')
 def get_tournaments():
@@ -88,7 +102,6 @@ def get_tournament_data(tournament_id):
     for group_name, teams in standings.items():
         sorted_teams = sorted(teams, key=lambda t: (t.points, t.goal_difference, t.goals_for, t.name), reverse=True)
         
-        # Manually build a list of dictionaries to include the properties
         team_list = []
         for team in sorted_teams:
             team_list.append({
@@ -99,16 +112,12 @@ def get_tournament_data(tournament_id):
                 'losses': team.losses,
                 'goals_for': team.goals_for,
                 'goals_against': team.goals_against,
-                'goal_difference': team.goal_difference, # Now included
-                'points': team.points                  # Now included
+                'goal_difference': team.goal_difference,
+                'points': team.points
             })
         sorted_standings[group_name] = team_list
-    # ... inside the get_tournament_data function ...
-
-# ... inside the get_tournament_data function ...
 
     formatted_fixtures = []
-    # Use enumerate to get a counter 'i'
     for i, match in enumerate(all_fixtures): 
         match_dict = {
             'display_no': i + 1,
@@ -125,8 +134,6 @@ def get_tournament_data(tournament_id):
         }
         formatted_fixtures.append(match_dict)
 
-    # --- FIX IS HERE ---
-    # The following lines have been moved outside of the for loop.
     report_data = {
         'standings': sorted_standings,
         'fixtures': formatted_fixtures,

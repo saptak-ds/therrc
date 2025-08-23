@@ -1,38 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Tournament Manager</title>
-    <!-- Include Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 font-sans">
-
-    <!-- Main Header -->
-    <header class="w-full bg-gray-800 py-8 text-center">
-        <h1 class="text-white text-4xl font-semibold uppercase tracking-wider">THE RENDERED RIVALRY CUP</h1>
+  </head>
+  <body class="bg-gray-100 font-sans">
+    
+    <!-- NEW UNIVERSAL HEADER -->
+    <header class="w-full bg-gray-800 py-8 text-center relative">
+        <h1 class="text-white text-4xl font-semibold uppercase tracking-wider">
+            THE RENDERED RIVALRY CUP
+        </h1>
+        <a href="/admin" class="absolute top-1/2 -translate-y-1/2 right-4 md:right-8 text-sm font-medium text-gray-300 bg-gray-700/50 px-4 py-2 rounded-lg hover:bg-gray-600/50 transition-colors">
+            Admin Panel
+        </a>
     </header>
 
     <!-- Main Content -->
     <div class="container mx-auto text-center px-4 py-16">
-        <p class="text-xl text-gray-600 mb-12">Your all-in-one tournament management suite.</p>
-        
-        <main class="flex flex-col md:flex-row justify-center items-center gap-8">
-            <!-- Reports Card -->
-            <a href="/reports" class="group block max-w-sm w-full bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-1 transition-transform duration-300">
-                <div class="text-5xl mb-4">📊</div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">View Reports</h2>
-                <p class="text-gray-600">Browse standings, fixtures, and results from past and present tournaments.</p>
-            </a>
-            
-            <!-- Admin Panel Card -->
-            <a href="/admin" class="group block max-w-sm w-full bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-1 transition-transform duration-300">
-                <div class="text-5xl mb-4">⚙️</div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Admin Panel</h2>
-                <p class="text-gray-600">Create new tournaments, enter match results, and manage all settings.</p>
-            </a>
-        </main>
-    </div>
+      <p class="text-xl text-gray-600 mb-12">
+        Your all-in-one tournament management suite.
+      </p>
 
-</body>
+      <main class="flex flex-col md:flex-row justify-center items-center gap-8">
+        
+        <!-- Standings Card -->
+        <a
+          href="/standings"
+          class="group block max-w-xs w-full bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-1 transition-transform duration-300"
+        >
+          <div class="text-5xl mb-4">🏆</div>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">Standings</h2>
+          <p class="text-gray-600">
+            View live point tables and group rankings for all tournaments.
+          </p>
+        </a>
+
+        <!-- Fixtures Card -->
+        <a
+          href="/fixtures"
+          class="group block max-w-xs w-full bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-1 transition-transform duration-300"
+        >
+          <div class="text-5xl mb-4">📅</div>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">Fixtures</h2>
+          <p class="text-gray-600">
+            Check match schedules, results, and knockout brackets.
+          </p>
+        </a>
+        
+        <!-- Full Reports Card -->
+        <a
+          href="/reports"
+          class="group block max-w-xs w-full bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-1 transition-transform duration-300"
+        >
+          <div class="text-5xl mb-4">📊</div>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">Full Reports</h2>
+          <p class="text-gray-600">
+            Get a combined view of standings and fixtures for printing.
+          </p>
+        </a>
+
+        <!-- OLD ADMIN CARD HAS BEEN REMOVED -->
+
+      </main>
+    </div>
+  </body>
 </html>

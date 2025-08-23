@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Tournament Reports</title>
+    <title>Fixtures & Results</title>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body class="bg-gray-100 font-sans">
@@ -35,12 +35,12 @@
           >
           <a
             href="/fixtures"
-            class="py-4 px-6 block hover:text-blue-500 focus:outline-none text-gray-600"
+            class="py-4 px-6 block hover:text-blue-500 focus:outline-none {% if active_page == 'fixtures' %}text-blue-500 border-b-2 font-semibold border-blue-500{% else %}text-gray-600{% endif %}"
             >FIXTURES</a
           >
           <a
             href="/reports"
-            class="py-4 px-6 block hover:text-blue-500 focus:outline-none {% if active_page == 'reports' %}text-blue-500 border-b-2 font-semibold border-blue-500{% else %}text-gray-600{% endif %}"
+            class="py-4 px-6 block hover:text-blue-500 focus:outline-none text-gray-600"
             >REPORTS</a
           >
         </div>
@@ -61,12 +61,6 @@
             >
               <option value="">-- Select a Tournament --</option>
             </select>
-            <button
-              onclick="window.print()"
-              class="px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors duration-300"
-            >
-              🖨️ Print Report
-            </button>
           </div>
           <a
             href="/"
@@ -80,16 +74,13 @@
           id="season-subtitle"
           class="text-center text-2xl font-bold text-white uppercase bg-gradient-to-r from-slate-700 to-slate-800 py-4 tracking-widest shadow-inner"
         >
-          Select a season to view details
+          Select a season to view fixtures
         </div>
 
-        <!-- Report Content (Standings & Fixtures) -->
-        <main
-          id="report-content"
-          class="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4"
-        >
+        <!-- Fixtures Content -->
+        <main id="fixtures-content" class="p-6 md:p-8">
           <p class="text-gray-500 text-center col-span-full">
-            Select a tournament from the dropdown to generate its report.
+            Select a tournament from the dropdown to view its fixtures.
           </p>
         </main>
       </div>
@@ -98,26 +89,6 @@
     <script>
       let currentTournamentData = null;
 
-      // --- RENDERING & FILTERING FUNCTIONS (UNCHANGED) ---
-      function renderStandingsTable(teams, qualifiers) {
-          let table = '<div><table class="w-full text-sm text-left text-gray-500"> <thead class="text-xs text-gray-700 uppercase bg-gray-50"> <tr> <th class="px-4 py-3">#</th> <th class="px-4 py-3">Team</th> <th class="px-4 py-3 text-center">MP</th> <th class="px-4 py-3 text-center">W</th> <th class="px-4 py-3 text-center">D</th> <th class="px-4 py-3 text-center">L</th> <th class="px-4 py-3 text-center">GF</th> <th class="px-4 py-3 text-center">GA</th> <th class="px-4 py-3 text-center">GD</th> <th class="px-4 py-3 text-center">Pts</th> </tr> </thead> <tbody>';
-          teams.forEach((team, index) => {
-              const isQualifier = (index < qualifiers) ? 'bg-green-50' : 'bg-white';
-              table += `<tr class="${isQualifier} border-b hover:bg-gray-50">
-                  <td class="px-4 py-3 font-medium text-gray-900">${index + 1}</td>
-                  <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap text-sm max-w-[120px] truncate">${team.name}</td>
-                  <td class="px-4 py-3 text-center">${team.matches_played}</td>
-                  <td class="px-4 py-3 text-center">${team.wins}</td>
-                  <td class="px-4 py-3 text-center">${team.draws}</td>
-                  <td class="px-4 py-3 text-center">${team.losses}</td>
-                  <td class="px-4 py-3 text-center">${team.goals_for}</td>
-                  <td class="px-4 py-3 text-center">${team.goals_against}</td>
-                  <td class="px-4 py-3 text-center">${team.goal_difference}</td>
-                  <td class="px-4 py-3 text-center font-bold text-gray-900">${team.points}</td>
-              </tr>`;
-          });
-          return table + '</tbody></table></div>';
-      }
       function renderFixturesTable(fixtures) {
           const fixturesByStage = fixtures.reduce((acc, match) => {
               const stage = match.stage;
@@ -126,6 +97,7 @@
               acc[stageKey].push(match);
               return acc;
           }, {});
+
           const stageOrder = ['League Stage', 'Quarter-Final', 'Semi-Final', 'Final'];
           const stageStyles = {
               'League Stage':    { header: 'bg-gray-100 text-gray-800', row: 'bg-white' },
@@ -133,6 +105,7 @@
               'Semi-Final':    { header: 'bg-indigo-100 text-indigo-800 font-bold', row: 'bg-indigo-50' },
               'Final':         { header: 'bg-amber-100 text-amber-800 font-bold', row: 'bg-amber-50' }
           };
+
           const winnerMap = {};
           (currentTournamentData.fixtures || []).forEach(match => {
               if (match.status === 'Played' && (match.stage === 'Quarter-Final' || match.stage === 'Semi-Final')) {
@@ -141,6 +114,7 @@
                   winnerMap[placeholder] = winnerName;
               }
           });
+
           let finalHtml = '<div class="space-y-6">';
           stageOrder.forEach(stageName => {
               if (fixturesByStage[stageName] && fixturesByStage[stageName].length > 0) {
@@ -188,11 +162,13 @@
           });
           return finalHtml + '</div>';
       }
+
       function applyFixtureFilters() {
           if (!currentTournamentData) return;
           const filterType = document.getElementById('fixture-filter-type').value;
           const filterValue = document.getElementById('fixture-filter-value').value;
           let filteredFixtures = [];
+
           if (filterType === 'all') {
               filteredFixtures = currentTournamentData.fixtures;
           } else if (filterType === 'group' && filterValue) {
@@ -204,7 +180,8 @@
           } else {
               filteredFixtures = currentTournamentData.fixtures;
           }
-          const fixturesContainer = document.getElementById('fixtures-container');
+
+          const fixturesContainer = document.getElementById('fixtures-display-area');
           if(fixturesContainer) {
               let html = renderFixturesTable(filteredFixtures);
               if (!filteredFixtures || filteredFixtures.length === 0) {
@@ -213,47 +190,38 @@
               fixturesContainer.innerHTML = html;
           }
       }
-      function renderReport(data) {
+
+      function renderPage(data) {
           currentTournamentData = data;
-          const reportContent = document.getElementById('report-content');
+          const fixturesContent = document.getElementById('fixtures-content');
           const seasonSubtitle = document.getElementById('season-subtitle');
-          seasonSubtitle.textContent = `Season ${data.season_number} Report`;
-          let standingsHtml = `<div class="lg:col-span-1">
-              <h2 class="text-xl font-semibold text-white bg-slate-700 uppercase tracking-wider px-4 py-2 rounded-t-lg">Standings</h2>
-              <div id="standings-container-wrapper" class="h-[70vh] overflow-y-auto pr-2 border-x border-b rounded-b-lg">`;
-          for (const groupName in data.standings) {
-              standingsHtml += `<h3 class="text-md font-bold text-gray-600 bg-gray-100 p-2 rounded-md mt-4 mx-2 mb-2">GROUP ${groupName}</h3>`;
-              standingsHtml += renderStandingsTable(data.standings[groupName], data.settings.qualifiers_per_group);
-          }
-          standingsHtml += '</div></div>';
-          let fixturesHtml = `<div class="lg:col-span-1">
-              <div class="flex justify-between items-center text-white bg-slate-700 uppercase tracking-wider px-4 py-2 rounded-t-lg">
-                  <h2 class="text-xl font-semibold">Fixtures & Results</h2>
-                  <div class="flex items-center gap-2">
-                      <select id="fixture-filter-type" class="text-xs bg-slate-600 border border-slate-500 rounded p-1 focus:outline-none">
-                          <option value="all">All Fixtures</option>
-                          <option value="group" id="group-filter-option">Group Wise</option>
-                          <option value="team">Team Wise</option>
-                          <option value="knockouts" id="knockout-filter-option">Knockouts</option>
-                      </select>
-                      <select id="fixture-filter-value" class="text-xs bg-slate-600 border border-slate-500 rounded p-1 focus:outline-none" style="display: none;"></select>
-                  </div>
+          seasonSubtitle.textContent = `Season ${data.season_number} Fixtures & Results`;
+
+          let pageHtml = `<div class="flex justify-between items-center bg-gray-50 p-4 rounded-lg border mb-6">
+              <h2 class="text-xl font-semibold text-gray-800">Filters</h2>
+              <div class="flex items-center gap-2">
+                  <select id="fixture-filter-type" class="text-sm bg-white border border-gray-300 rounded p-1 focus:outline-none">
+                      <option value="all">All Fixtures</option>
+                      <option value="group" id="group-filter-option">Group Wise</option>
+                      <option value="team">Team Wise</option>
+                      <option value="knockouts" id="knockout-filter-option">Knockouts</option>
+                  </select>
+                  <select id="fixture-filter-value" class="text-sm bg-white border border-gray-300 rounded p-1 focus:outline-none" style="display: none;"></select>
               </div>
-              <div id="fixtures-container-wrapper" class="h-[70vh] overflow-y-auto pr-2 border-x border-b rounded-b-lg p-4">
-                  <div id="fixtures-container">
-                    ${renderFixturesTable(data.fixtures)}
-                  </div>
-              </div>
-          </div>`;
-          reportContent.innerHTML = standingsHtml + fixturesHtml;
+          </div>
+          <div id="fixtures-display-area"></div>`;
+          fixturesContent.innerHTML = pageHtml;
+
           const filterTypeSelect = document.getElementById('fixture-filter-type');
           const filterValueSelect = document.getElementById('fixture-filter-value');
           const groupFilterOption = document.getElementById('group-filter-option');
           const knockoutFilterOption = document.getElementById('knockout-filter-option');
+
           const hasGroups = Object.keys(data.standings).length > 1;
           const hasKnockouts = data.fixtures.some(m => !m.stage.includes('Group') && !m.stage.includes('League'));
           groupFilterOption.style.display = hasGroups ? 'block' : 'none';
           knockoutFilterOption.style.display = hasKnockouts ? 'block' : 'none';
+
           filterTypeSelect.addEventListener('change', () => {
               const selectedType = filterTypeSelect.value;
               filterValueSelect.innerHTML = '';
@@ -275,22 +243,14 @@
               applyFixtureFilters();
           });
           filterValueSelect.addEventListener('change', applyFixtureFilters);
+
+          applyFixtureFilters();
       }
 
-      // --- SCRIPT INITIALIZATION ---
       window.onload = function() {
           const tournamentSelect = document.getElementById('tournament-select');
-          const reportContent = document.getElementById('report-content');
-
-          // --- FIX 1 of 3: Save state right before the page unloads ---
-          window.addEventListener('beforeunload', () => {
-              sessionStorage.setItem('selectedTournamentId', tournamentSelect.value);
-              sessionStorage.setItem('mainScroll', window.scrollY);
-              const standingsDiv = document.getElementById('standings-container-wrapper');
-              const fixturesDiv = document.getElementById('fixtures-container-wrapper');
-              if (standingsDiv) sessionStorage.setItem('standingsScroll', standingsDiv.scrollTop);
-              if (fixturesDiv) sessionStorage.setItem('fixturesScroll', fixturesDiv.scrollTop);
-          });
+          const fixturesContent = document.getElementById('fixtures-content');
+          const seasonSubtitle = document.getElementById('season-subtitle');
 
           fetch('/api/tournaments')
               .then(response => response.json())
@@ -298,57 +258,31 @@
                   tournaments.forEach(tourney => {
                       tournamentSelect.add(new Option(`Season ${tourney.season_number} (Created: ${new Date(tourney.created_date).toLocaleDateString()})`, tourney.tournament_id));
                   });
-
-                  // --- FIX 2 of 3: Restore state on initial load ---
-                  const savedTournamentId = sessionStorage.getItem('selectedTournamentId');
-                  const preselectedId = {{ preselected_id|tojson }};
-
-                  const idToLoad = preselectedId || savedTournamentId;
-
-                  if (idToLoad) {
-                      tournamentSelect.value = idToLoad;
-                      tournamentSelect.dispatchEvent(new Event('change'));
-                  } else {
-                      // Restore scroll on F5 refresh even if no tournament is selected
-                      setTimeout(() => {
-                        const mainScroll = sessionStorage.getItem('mainScroll');
-                        if (mainScroll) window.scrollTo(0, parseInt(mainScroll, 10));
-                      }, 0);
-                  }
+                  try {
+                      const preselectedId = {{ preselected_id|tojson }};
+                      if (preselectedId) {
+                          tournamentSelect.value = preselectedId;
+                          tournamentSelect.dispatchEvent(new Event('change'));
+                      }
+                  } catch (e) { console.error("Could not process preselected ID.", e); }
               });
 
           tournamentSelect.addEventListener('change', function() {
               const tournamentId = this.value;
-              const newUrl = tournamentId ? `/reports/${tournamentId}` : '/reports';
+              const newUrl = tournamentId ? `/fixtures/${tournamentId}` : '/fixtures';
               window.history.pushState({path: newUrl}, '', newUrl);
 
               if (!tournamentId) {
-                  reportContent.innerHTML = '<p class="text-gray-500 text-center col-span-full">Select a tournament from the dropdown.</p>';
-                  document.getElementById('season-subtitle').textContent = 'Select a season to view details';
+                  fixturesContent.innerHTML = '<p class="text-gray-500 text-center col-span-full">Select a tournament from the dropdown.</p>';
+                  seasonSubtitle.textContent = 'Select a season to view fixtures';
                   currentTournamentData = null;
                   return;
               }
 
-              reportContent.innerHTML = '<div class="text-center col-span-full text-gray-500">Loading Report...</div>';
+              fixturesContent.innerHTML = '<div class="text-center col-span-full text-gray-500">Loading Fixtures...</div>';
               fetch(`/api/tournaments/${tournamentId}`)
                   .then(response => response.json())
-                  .then(data => {
-                      renderReport(data);
-
-                      // --- FIX 3 of 3: Restore ALL scroll positions after dynamic content load ---
-                      setTimeout(() => {
-                        const mainScroll = sessionStorage.getItem('mainScroll');
-                        const standingsScroll = sessionStorage.getItem('standingsScroll');
-                        const fixturesScroll = sessionStorage.getItem('fixturesScroll');
-
-                        if (mainScroll) window.scrollTo(0, parseInt(mainScroll, 10));
-
-                        const newStandingsDiv = document.getElementById('standings-container-wrapper');
-                        const newFixturesDiv = document.getElementById('fixtures-container-wrapper');
-                        if (newStandingsDiv && standingsScroll) newStandingsDiv.scrollTop = parseInt(standingsScroll, 10);
-                        if (newFixturesDiv && fixturesScroll) newFixturesDiv.scrollTop = parseInt(fixturesScroll, 10);
-                      }, 0);
-                  });
+                  .then(data => renderPage(data));
           });
       };
     </script>

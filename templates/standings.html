@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Standings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 font-sans">
+    <!-- Main Header -->
+    <!-- NEW UNIVERSAL HEADER -->
+    <header class="w-full bg-gray-800 py-8 text-center relative">
+      <h1 class="text-white text-4xl font-semibold uppercase tracking-wider">
+        THE RENDERED RIVALRY CUP
+      </h1>
+      <a
+        href="/admin"
+        class="absolute top-1/2 -translate-y-1/2 right-4 md:right-8 text-sm font-medium text-gray-300 bg-gray-700/50 px-4 py-2 rounded-lg hover:bg-gray-600/50 transition-colors"
+      >
+        Admin Panel
+      </a>
+    </header>
+
+    <!-- NEW NAVIGATION MENU -->
+    <nav class="bg-white shadow-md">
+      <div class="container mx-auto px-4">
+        <div class="flex justify-center -mb-px">
+          <a
+            href="/"
+            class="py-4 px-6 block hover:text-blue-500 focus:outline-none text-gray-600"
+          >
+            HOME
+          </a>
+          <a
+            href="/standings"
+            class="py-4 px-6 block hover:text-blue-500 focus:outline-none {% if active_page == 'standings' %}text-blue-500 border-b-2 font-semibold border-blue-500{% else %}text-gray-600{% endif %}"
+          >
+            STANDINGS
+          </a>
+          <a
+            href="/fixtures"
+            class="py-4 px-6 block hover:text-blue-500 focus:outline-none {% if active_page == 'fixtures' %}text-blue-500 border-b-2 font-semibold border-blue-500{% else %}text-gray-600{% endif %}"
+          >
+            FIXTURES
+          </a>
+          <a
+            href="/reports"
+            class="py-4 px-6 block hover:text-blue-500 focus:outline-none {% if active_page == 'reports' %}text-blue-500 border-b-2 font-semibold border-blue-500{% else %}text-gray-600{% endif %}"
+          >
+            REPORTS
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <div class="w-full px-4 sm:px-6 lg:px-8 mt-8">
+      <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <!-- Controls Area -->
+        <div
+          class="p-6 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center justify-between gap-4"
+        >
+          <div class="flex items-center gap-4">
+            <select
+              id="tournament-select"
+              class="bg-white border border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">-- Select a Tournament --</option>
+            </select>
+          </div>
+          <a
+            href="/"
+            class="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors duration-300"
+            >Back to Home</a
+          >
+        </div>
+
+        <!-- Report Title -->
+        <div
+          id="season-subtitle"
+          class="text-center text-2xl font-bold text-white uppercase bg-gradient-to-r from-slate-700 to-slate-800 py-4 tracking-widest shadow-inner"
+        >
+          Select a season to view standings
+        </div>
+
+        <!-- Standings Content -->
+        <main
+          id="standings-content"
+          class="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4"
+        >
+          <p class="text-gray-500 text-center col-span-full">
+            Select a tournament from the dropdown to view its standings.
+          </p>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      function renderStandingsTable(teams, qualifiers) {
+        let table = '<div><table class="w-full text-sm text-left text-gray-500"> <thead class="text-xs text-gray-700 uppercase bg-gray-50"> <tr> <th class="px-4 py-3">#</th> <th class="px-4 py-3">Team</th> <th class="px-4 py-3 text-center">MP</th> <th class="px-4 py-3 text-center">W</th> <th class="px-4 py-3 text-center">D</th> <th class="px-4 py-3 text-center">L</th> <th class="px-4 py-3 text-center">GF</th> <th class="px-4 py-3 text-center">GA</th> <th class="px-4 py-3 text-center">GD</th> <th class="px-4 py-3 text-center">Pts</th> </tr> </thead> <tbody>';
+        teams.forEach((team, index) => {
+            const isQualifier = (index < qualifiers) ? 'bg-green-50' : 'bg-white';
+            table += `<tr class="${isQualifier} border-b hover:bg-gray-50">
+                <td class="px-4 py-3 font-medium text-gray-900">${index + 1}</td>
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap text-sm max-w-[120px] truncate">${team.name}</td>
+                <td class="px-4 py-3 text-center">${team.matches_played}</td>
+                <td class="px-4 py-3 text-center">${team.wins}</td>
+                <td class="px-4 py-3 text-center">${team.draws}</td>
+                <td class="px-4 py-3 text-center">${team.losses}</td>
+                <td class="px-4 py-3 text-center">${team.goals_for}</td>
+                <td class="px-4 py-3 text-center">${team.goals_against}</td>
+                <td class="px-4 py-3 text-center">${team.goal_difference}</td>
+                <td class="px-4 py-3 text-center font-bold text-gray-900">${team.points}</td>
+            </tr>`;
+        });
+        return table + '</tbody></table></div>';
+      }
+
+      function renderPage(data) {
+          const standingsContent = document.getElementById('standings-content');
+          const seasonSubtitle = document.getElementById('season-subtitle');
+          seasonSubtitle.textContent = `Season ${data.season_number} Standings`;
+
+          let standingsHtml = '';
+          for (const groupName in data.standings) {
+              standingsHtml += `<div class="lg:col-span-1">
+                  <h3 class="text-md font-bold text-gray-600 bg-gray-100 p-2 rounded-md mb-2">GROUP ${groupName}</h3>
+                  ${renderStandingsTable(data.standings[groupName], data.settings.qualifiers_per_group)}
+              </div>`;
+          }
+          standingsContent.innerHTML = standingsHtml;
+      }
+
+      window.onload = function() {
+          const tournamentSelect = document.getElementById('tournament-select');
+          const standingsContent = document.getElementById('standings-content');
+          const seasonSubtitle = document.getElementById('season-subtitle');
+
+          fetch('/api/tournaments')
+              .then(response => response.json())
+              .then(tournaments => {
+                  tournaments.forEach(tourney => {
+                      tournamentSelect.add(new Option(`Season ${tourney.season_number} (Created: ${new Date(tourney.created_date).toLocaleDateString()})`, tourney.tournament_id));
+                  });
+                  try {
+                      const preselectedId = {{ preselected_id|tojson }};
+                      if (preselectedId) {
+                          tournamentSelect.value = preselectedId;
+                          tournamentSelect.dispatchEvent(new Event('change'));
+                      }
+                  } catch (e) { console.error("Could not process preselected ID.", e); }
+              });
+
+          tournamentSelect.addEventListener('change', function() {
+              const tournamentId = this.value;
+              const newUrl = tournamentId ? `/standings/${tournamentId}` : '/standings';
+              window.history.pushState({path: newUrl}, '', newUrl);
+
+              if (!tournamentId) {
+                  standingsContent.innerHTML = '<p class="text-gray-500 text-center col-span-full">Select a tournament from the dropdown.</p>';
+                  seasonSubtitle.textContent = 'Select a season to view standings';
+                  return;
+              }
+
+              standingsContent.innerHTML = '<div class="text-center col-span-full text-gray-500">Loading Standings...</div>';
+              fetch(`/api/tournaments/${tournamentId}`)
+                  .then(response => response.json())
+                  .then(data => renderPage(data));
+          });
+      };
+    </script>
+  </body>
+</html>

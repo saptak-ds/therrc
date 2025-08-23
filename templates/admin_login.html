@@ -1,49 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <!-- Add this right after your existing Tailwind script tag in the <head> -->
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+      };
+    </script>
+    <meta charset="UTF-8" />
     <title>Admin Login</title>
     <!-- Include Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 font-sans">
-
+  </head>
+  <body class="bg-gray-100 font-sans">
     <!-- Main Header -->
     <header class="w-full bg-gray-800 py-8 text-center absolute top-0">
-        <h1 class="text-white text-4xl font-semibold uppercase tracking-wider">THE RENDERED RIVALRY CUP</h1>
+      <h1 class="text-white text-4xl font-semibold uppercase tracking-wider">
+        THE RENDERED RIVALRY CUP
+      </h1>
     </header>
 
     <!-- Login Form Container -->
     <div class="min-h-screen flex items-center justify-center pt-32">
-        <div class="max-w-md w-full bg-white rounded-xl shadow-2xl p-8 m-4">
-            <h2 class="text-3xl font-bold text-gray-800 text-center mb-8">Admin Login</h2>
+      <div class="max-w-md w-full bg-white rounded-xl shadow-2xl p-8 m-4">
+        <h2 class="text-3xl font-bold text-gray-800 text-center mb-8">
+          Admin Login
+        </h2>
 
-            <!-- Error Message Display -->
-            {% if error %}
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
-                    <span class="block sm:inline">{{ error }}</span>
-                </div>
-            {% endif %}
-
-            <!-- Login Form -->
-            <form method="post">
-                <div class="mb-6">
-                    <label for="password" class="block mb-2 text-sm font-bold text-gray-700">Password</label>
-                    <input type="password" id="password" name="password" required
-                           class="w-full px-4 py-3 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <button type="submit"
-                        class="w-full py-3 text-lg font-bold text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-700 transition-colors duration-300">
-                    Login
-                </button>
-            </form>
-
-            <!-- Back to Home Link -->
-            <div class="text-center mt-6">
-                <a href="/" class="text-gray-600 hover:underline">Back to Home</a>
-            </div>
+        <!-- Error Message Display -->
+        {% if error %}
+        <div
+          class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6"
+          role="alert"
+        >
+          <span class="block sm:inline">{{ error }}</span>
         </div>
-    </div>
+        {% endif %}
 
-</body>
+        <!-- Login Form -->
+        <form method="post">
+          <div class="mb-6">
+            <label
+              for="password"
+              class="block mb-2 text-sm font-bold text-gray-700"
+              >Password</label
+            >
+            <input
+              type="password"
+              id="password"
+              name="password"
+              required
+              class="w-full px-4 py-3 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <button
+            type="submit"
+            class="w-full py-3 text-lg font-bold text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-700 transition-colors duration-300"
+          >
+            Login
+          </button>
+        </form>
+
+        <!-- Back to Home Link -->
+        <div class="text-center mt-6">
+          <a href="/" class="text-gray-600 hover:underline">Back to Home</a>
+        </div>
+      </div>
+    </div>
+  </body>
 </html>
