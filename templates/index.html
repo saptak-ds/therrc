@@ -2,32 +2,56 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Tournament Manager</title>
+    <title>Homepage Preview</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- CSS for the gradient animation -->
+    <style>
+      @keyframes gradient-pan {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+      .animate-gradient-pan {
+        background-size: 200% auto;
+        animation: gradient-pan 5s ease-in-out infinite;
+      }
+    </style>
   </head>
   <body class="bg-gray-100 font-sans">
-    
-    <!-- NEW UNIVERSAL HEADER -->
+    <!-- Universal Header -->
     <header class="w-full bg-gray-800 py-8 text-center relative">
-        <h1 class="text-white text-4xl font-semibold uppercase tracking-wider">
-            THE RENDERED RIVALRY CUP
-        </h1>
-        <a href="/admin" class="absolute top-1/2 -translate-y-1/2 right-4 md:right-8 text-sm font-medium text-gray-300 bg-gray-700/50 px-4 py-2 rounded-lg hover:bg-gray-600/50 transition-colors">
-            Admin Panel
-        </a>
+      <h1 class="text-white text-4xl font-semibold uppercase tracking-wider">
+        THE RENDERED RIVALRY CUP
+      </h1>
+      <a
+        href="#"
+        class="absolute top-1/2 -translate-y-1/2 right-4 md:right-8 text-sm font-medium text-gray-300 bg-gray-700/50 px-4 py-2 rounded-lg hover:bg-gray-600/50 transition-colors"
+      >
+        Admin Panel
+      </a>
     </header>
 
     <!-- Main Content -->
     <div class="container mx-auto text-center px-4 py-16">
-      <p class="text-xl text-gray-600 mb-12">
-        Your all-in-one tournament management suite.
+      <!-- NEW ELEGANT SUBTITLE -->
+      <p class="text-3xl md:text-4xl font-bold mb-16 tracking-tight">
+        <span
+          class="bg-gradient-to-r from-slate-500 via-gray-400 to-slate-500 bg-clip-text text-transparent animate-gradient-pan"
+        >
+          Every Match Matters. Every Point Counts.
+        </span>
       </p>
 
       <main class="flex flex-col md:flex-row justify-center items-center gap-8">
-        
         <!-- Standings Card -->
         <a
-          href="/standings"
+          href="#"
           class="group block max-w-xs w-full bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-1 transition-transform duration-300"
         >
           <div class="text-5xl mb-4">🏆</div>
@@ -39,7 +63,7 @@
 
         <!-- Fixtures Card -->
         <a
-          href="/fixtures"
+          href="#"
           class="group block max-w-xs w-full bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-1 transition-transform duration-300"
         >
           <div class="text-5xl mb-4">📅</div>
@@ -48,10 +72,10 @@
             Check match schedules, results, and knockout brackets.
           </p>
         </a>
-        
+
         <!-- Full Reports Card -->
         <a
-          href="/reports"
+          href="#"
           class="group block max-w-xs w-full bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-1 transition-transform duration-300"
         >
           <div class="text-5xl mb-4">📊</div>
@@ -60,9 +84,6 @@
             Get a combined view of standings and fixtures for printing.
           </p>
         </a>
-
-        <!-- OLD ADMIN CARD HAS BEEN REMOVED -->
-
       </main>
     </div>
   </body>
