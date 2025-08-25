@@ -3,8 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <title>Admin Dashboard</title>
-    <!-- Include Tailwind CSS via CDN -->
-    <!-- Add this right after your existing Tailwind script tag in the <head> -->
     <script>
       tailwind.config = {
         darkMode: "class",
@@ -13,8 +11,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body class="bg-gray-100 font-sans">
-    <!-- Main Header -->
-    <!-- NEW UNIVERSAL HEADER -->
     <header class="w-full bg-gray-800 py-8 text-center relative">
       <h1 class="text-white text-4xl font-semibold uppercase tracking-wider">
         THE RENDERED RIVALRY CUP
@@ -27,10 +23,8 @@
       </a>
     </header>
 
-    <!-- Main Content Container -->
     <div class="container mx-auto max-w-4xl mt-8">
       <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-        <!-- Subheader -->
         <div
           class="p-6 bg-gray-50 border-b border-gray-200 flex items-center justify-between"
         >
@@ -43,13 +37,11 @@
         </div>
 
         <main class="p-6 md:p-8">
-          <!-- Create New Tournament Section -->
           <section class="mb-8">
             <h3 class="text-xl font-bold text-gray-700 mb-4 pb-2 border-b">
               Create New Tournament
             </h3>
             <form id="create-tournament-form" class="space-y-6">
-              <!-- Form content is unchanged -->
               <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label
@@ -143,6 +135,45 @@
                     />
                   </div>
                 </div>
+
+                <div
+                  id="bracket-options-container"
+                  class="pt-6 mt-6 border-t"
+                  style="display: none"
+                >
+                  <h4 class="text-lg font-bold text-gray-700 mb-4">
+                    Knockout Bracket Setup
+                  </h4>
+                  <div>
+                    <label
+                      for="knockout-brackets-type"
+                      class="block mb-2 text-sm font-bold text-gray-700"
+                      >Bracket Generation</label
+                    >
+                    <select
+                      id="knockout-brackets-type"
+                      name="knockout_brackets_type"
+                      class="w-full md:w-1/2 px-4 py-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="default">Default (e.g., A1 vs B2)</option>
+                      <option value="custom">
+                        Custom (Manually set matchups)
+                      </option>
+                    </select>
+                  </div>
+
+                  <div
+                    id="default-bracket-display"
+                    class="mt-4 p-4 bg-gray-100 rounded-lg text-sm text-gray-600"
+                    style="display: none"
+                  ></div>
+
+                  <div
+                    id="custom-bracket-builder"
+                    class="mt-4 space-y-4"
+                    style="display: none"
+                  ></div>
+                </div>
                 <button
                   type="submit"
                   class="mt-6 w-full md:w-auto px-6 py-3 text-lg font-bold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-300"
@@ -153,7 +184,6 @@
             </form>
           </section>
 
-          <!-- Existing Tournaments Section (MODIFIED) -->
           <section>
             <h3 class="text-xl font-bold text-gray-700 mb-4 pb-2 border-b">
               Manage Existing Tournaments
@@ -175,7 +205,6 @@
                     }}</span
                   >
                 </a>
-                <!-- <<< NEW DELETE BUTTON >>> -->
                 <button
                   onclick="deleteTournament({{ t.tournament_id }}, {{ t.season_number }})"
                   class="ml-4 px-3 py-1 text-xs font-bold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors"
@@ -193,13 +222,255 @@
     </div>
 
     <script>
-      // Create tournament script is unchanged
+      // Get references to all the form elements we need to work with
       const generateBtn = document.getElementById("generate-team-fields");
       const teamsEntryDiv = document.getElementById("teams-entry");
       const container = document.getElementById("team-fields-container");
       const numGroupsSelect = document.getElementById("num-groups");
       const numTeamsInput = document.getElementById("num-teams-per-group");
       const knockoutSelect = document.getElementById("knockout-mode");
+      const bracketOptionsContainer = document.getElementById(
+        "bracket-options-container"
+      );
+      const bracketTypeSelect = document.getElementById(
+        "knockout-brackets-type"
+      );
+      const defaultDisplay = document.getElementById("default-bracket-display");
+      const customBuilder = document.getElementById("custom-bracket-builder");
+
+      function getQualifierPlaceholders() {
+        const numGroups = parseInt(numGroupsSelect.value);
+        const knockoutMode = knockoutSelect.value;
+        const groupNames = ["A", "B", "C", "D"];
+        const knockoutTeamsMap = { 1: 2, 2: 4, 3: 8 };
+        const totalQualifiers = knockoutTeamsMap[knockoutMode];
+        if (!totalQualifiers) return [];
+        const qualifiersPerGroup = totalQualifiers / numGroups;
+        const placeholders = [];
+        for (let i = 0; i < numGroups; i++) {
+          for (let j = 1; j <= qualifiersPerGroup; j++) {
+            placeholders.push(
+              numGroups === 1 ? toOrdinal(j) : `${groupNames[i]}${j}`
+            );
+          }
+        }
+        return placeholders;
+      }
+
+      function getDefaultBracketStructure() {
+        const numGroups = parseInt(numGroupsSelect.value);
+        const knockoutMode = knockoutSelect.value;
+        const placeholders = getQualifierPlaceholders();
+        let bracket = [];
+        if (knockoutMode === "3") {
+          let pairings = [];
+          if (numGroups === 1)
+            pairings = [
+              [0, 7],
+              [3, 4],
+              [2, 5],
+              [1, 6],
+            ];
+          else if (numGroups === 2)
+            pairings = [
+              [0, 7],
+              [2, 5],
+              [4, 3],
+              [6, 1],
+            ];
+          else if (numGroups === 4)
+            pairings = [
+              [0, 3],
+              [4, 7],
+              [2, 1],
+              [6, 5],
+            ];
+          bracket.push(
+            ...pairings.map(
+              (p, i) =>
+                `Quarter-Final ${i + 1}: ${placeholders[p[0]]} vs ${
+                  placeholders[p[1]]
+                }`
+            )
+          );
+          bracket.push("---");
+          bracket.push(
+            "Semi-Final 1: Winner Quarter-Final 1 vs Winner Quarter-Final 2"
+          );
+          bracket.push(
+            "Semi-Final 2: Winner Quarter-Final 3 vs Winner Quarter-Final 4"
+          );
+          bracket.push("---");
+          bracket.push("Final: Winner Semi-Final 1 vs Winner Semi-Final 2");
+        } else if (knockoutMode === "2") {
+          let pairings = [];
+          if (numGroups === 1)
+            pairings = [
+              [0, 3],
+              [1, 2],
+            ];
+          else if (numGroups === 2)
+            pairings = [
+              [0, 3],
+              [2, 1],
+            ];
+          else if (numGroups === 4)
+            pairings = [
+              [0, 1],
+              [2, 3],
+            ];
+          bracket.push(
+            ...pairings.map(
+              (p, i) =>
+                `Semi-Final ${i + 1}: ${placeholders[p[0]]} vs ${
+                  placeholders[p[1]]
+                }`
+            )
+          );
+          bracket.push("---");
+          bracket.push("Final: Winner Semi-Final 1 vs Winner Semi-Final 2");
+        } else if (knockoutMode === "1") {
+          bracket.push(`Final: ${placeholders[0]} vs ${placeholders[1]}`);
+        }
+        return bracket;
+      }
+
+      // <<< PASTE THE NEW JAVASCRIPT FUNCTION HERE >>>
+      function toOrdinal(n) {
+        if (n % 100 >= 11 && n % 100 <= 13) return n + "th Place";
+        switch (n % 10) {
+          case 1:
+            return n + "st Place";
+          case 2:
+            return n + "nd Place";
+          case 3:
+            return n + "rd Place";
+          default:
+            return n + "th Place";
+        }
+      }
+
+      function addValidationListeners(containerId) {
+        const selects = document.querySelectorAll(`#${containerId} select`);
+        selects.forEach((select) => {
+          select.addEventListener("change", () => {
+            const selectedValues = Array.from(selects)
+              .map((s) => s.value)
+              .filter((v) => v !== "");
+            selects.forEach((s) => {
+              Array.from(s.options).forEach((option) => {
+                if (
+                  option.value !== "" &&
+                  selectedValues.includes(option.value) &&
+                  s.value !== option.value
+                ) {
+                  option.disabled = true;
+                } else {
+                  option.disabled = false;
+                }
+              });
+            });
+          });
+        });
+      }
+
+      function updateBracketUI() {
+        const bracketType = bracketTypeSelect.value;
+        if (bracketType === "default") {
+          defaultDisplay.style.display = "block";
+          customBuilder.style.display = "none";
+          customBuilder.innerHTML = "";
+
+          const structure = getDefaultBracketStructure();
+
+          if (structure.length > 0) {
+            // <<< NEW STYLING LOGIC STARTS HERE >>>
+            let html =
+              '<p class="font-bold mb-2">Default Bracket Structure:</p>';
+            html += '<div class="space-y-2 border p-3 rounded-lg bg-gray-50">'; // Container for the bracket
+
+            structure.forEach((matchupString) => {
+              if (matchupString === "---") {
+                // Use a styled divider instead of a plain <hr>
+                html +=
+                  '<div class="w-full border-t border-dashed my-3"></div>';
+              } else {
+                // Split the matchup string e.g., "Quarter-Final 1: A1 vs B2"
+                const [stageInfo, teams] = matchupString.split(": ");
+                const [team1, team2] = teams.split(" vs ");
+
+                html += `
+                            <div class="flex items-center text-sm p-2 bg-white rounded-md border shadow-sm">
+                                <div class="w-1/3 font-semibold text-gray-500">${stageInfo}:</div>
+                                <div class="w-1/3 text-right font-medium text-gray-800">${team1}</div>
+                                <div class="w-1/12 text-center text-xs text-gray-400">vs</div>
+                                <div class="w-1/3 text-left font-medium text-gray-800">${team2}</div>
+                            </div>
+                        `;
+              }
+            });
+            html += "</div>";
+            defaultDisplay.innerHTML = html;
+            // <<< STYLING LOGIC ENDS HERE >>>
+          } else {
+            defaultDisplay.innerHTML =
+              "<p>No knockout stage for this format.</p>";
+          }
+        } else {
+          // 'custom'
+          defaultDisplay.style.display = "none";
+          customBuilder.style.display = "block";
+          const placeholders = getQualifierPlaceholders();
+          const knockoutMode = knockoutSelect.value;
+          let builderHTML = "";
+          const firstRoundMatches =
+            knockoutMode === "3" ? 4 : knockoutMode === "2" ? 2 : 0;
+          const firstRoundName =
+            knockoutMode === "3" ? "Quarter-Final" : "Semi-Final";
+          if (firstRoundMatches > 0) {
+            builderHTML += `<div id="custom-qf-builder"><p class="font-bold mb-2">Set Custom ${firstRoundName} Matchups:</p>`;
+            let optionsHTML =
+              '<option value="">-- Select Team --</option>' +
+              placeholders
+                .map((p) => `<option value="${p}">${p}</option>`)
+                .join("");
+            for (let i = 0; i < firstRoundMatches; i++) {
+              const matchNum = i + 1;
+              builderHTML += `<div class="flex items-center gap-4 mt-2"><label class="font-semibold w-28">${firstRoundName} ${matchNum}:</label><select name="custom_qf_match_${matchNum}_t1" required class="flex-1 px-3 py-1 text-sm border border-gray-300 rounded-md">${optionsHTML}</select><span class="text-gray-500">vs</span><select name="custom_qf_match_${matchNum}_t2" required class="flex-1 px-3 py-1 text-sm border border-gray-300 rounded-md">${optionsHTML}</select></div>`;
+            }
+            builderHTML += `</div>`;
+          }
+          if (knockoutMode === "3") {
+            const sfPlaceholders = [
+              "Winner Quarter-Final 1",
+              "Winner Quarter-Final 2",
+              "Winner Quarter-Final 3",
+              "Winner Quarter-Final 4",
+            ];
+            builderHTML += `<div id="custom-sf-builder" class="mt-6 pt-4 border-t"><p class="font-bold mb-2">Set Custom Semi-Final Matchups:</p>`;
+            let optionsHTML =
+              '<option value="">-- Select Winner --</option>' +
+              sfPlaceholders
+                .map((p) => `<option value="${p}">${p}</option>`)
+                .join("");
+            for (let i = 0; i < 2; i++) {
+              const matchNum = i + 1;
+              builderHTML += `<div class="flex items-center gap-4 mt-2"><label class="font-semibold w-28">Semi-Final ${matchNum}:</label><select name="custom_sf_match_${matchNum}_t1" required class="flex-1 px-3 py-1 text-sm border border-gray-300 rounded-md">${optionsHTML}</select><span class="text-gray-500">vs</span><select name="custom_sf_match_${matchNum}_t2" required class="flex-1 px-3 py-1 text-sm border border-gray-300 rounded-md">${optionsHTML}</select></div>`;
+            }
+            builderHTML += `</div>`;
+          }
+          if (knockoutMode === "2" || knockoutMode === "3") {
+            builderHTML += `<div class="mt-6 pt-4 border-t"><p class="font-bold mb-2">Resulting Final:</p><p class="ml-4">Final: Winner Semi-Final 1 vs Winner Semi-Final 2</p></div>`;
+          }
+          customBuilder.innerHTML = builderHTML;
+          if (document.getElementById("custom-qf-builder"))
+            addValidationListeners("custom-qf-builder");
+          if (document.getElementById("custom-sf-builder"))
+            addValidationListeners("custom-sf-builder");
+        }
+      }
+
+      // --- EVENT LISTENERS and other functions... (No changes from here) ---
       generateBtn.addEventListener("click", () => {
         const numGroups = parseInt(numGroupsSelect.value),
           numTeams = parseInt(numTeamsInput.value);
@@ -210,20 +481,46 @@
         container.innerHTML = "";
         const groupNames = ["A", "B", "C", "D"];
         for (let i = 0; i < numGroups; i++) {
-          const groupName = groupNames[i],
-            groupLabel =
-              numGroups === 1 ? "League Teams" : `Group ${groupName} Teams`;
-          let groupHtml = `<h5 class="font-semibold text-gray-600">${groupLabel}</h5> <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 pl-4 border-l-2 border-gray-200">`;
+          const groupName = groupNames[i];
+          const groupLabel =
+            numGroups === 1 ? "League Teams" : `Group ${groupName} Teams`;
+
+          // <<< NEW STYLING LOGIC STARTS HERE >>>
+          // Start with a styled card container for the group
+          let groupHtml = `
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <h5 class="font-semibold text-gray-700 mb-3">${groupLabel}</h5>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+          `;
+
+          // Loop to create styled inputs with placeholders
           for (let j = 0; j < numTeams; j++) {
-            groupHtml += `<div class="flex items-center gap-2"> <label class="text-sm text-gray-500">Team ${
-              j + 1
-            }:</label> <input type="text" name="team_${groupName}_${j}" required class="w-full px-3 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"> </div>`;
+            groupHtml += `
+                <div>
+                    <input type="text" name="team_${groupName}_${j}" required 
+                           placeholder="Team ${j + 1} Name"
+                           class="w-full px-3 py-2 text-sm text-gray-800 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                </div>
+            `;
           }
-          groupHtml += `</div>`;
+          groupHtml += `</div></div>`; // Close the grid and the card
+          // <<< STYLING LOGIC ENDS HERE >>>
+
           container.innerHTML += groupHtml;
         }
         updateKnockoutOptions(numGroups, numTeams);
         teamsEntryDiv.style.display = "block";
+        bracketOptionsContainer.style.display = "block";
+        updateBracketUI();
+      });
+      bracketTypeSelect.addEventListener("change", updateBracketUI);
+      knockoutSelect.addEventListener("change", updateBracketUI);
+      numGroupsSelect.addEventListener("change", () => {
+        updateKnockoutOptions(
+          parseInt(numGroupsSelect.value),
+          parseInt(numTeamsInput.value)
+        );
+        updateBracketUI();
       });
       function updateKnockoutOptions(numGroups, numTeams) {
         knockoutSelect.innerHTML = "";
@@ -263,18 +560,13 @@
               if (result.success) window.location.reload();
             });
         });
-
-      // <<< NEW JAVASCRIPT FUNCTION FOR DELETING >>>
       function deleteTournament(tournamentId, seasonNumber) {
-        // A simple confirmation dialog to prevent accidental deletion
         if (
           confirm(
             `Are you sure you want to permanently delete Season ${seasonNumber}? This action cannot be undone.`
           )
         ) {
-          fetch(`/api/admin/delete/${tournamentId}`, {
-            method: "POST",
-          })
+          fetch(`/api/admin/delete/${tournamentId}`, { method: "POST" })
             .then((response) => response.json())
             .then((result) => {
               alert(result.message);
@@ -288,22 +580,6 @@
             });
         }
       }
-    </script>
-    <script>
-      // This script finds all number inputs with a minimum value of 0
-      // and prevents the user from typing negative signs or the letter 'e'.
-      document.addEventListener("DOMContentLoaded", () => {
-        const numberInputs = document.querySelectorAll(
-          'input[type="number"][min="0"]'
-        );
-        numberInputs.forEach((input) => {
-          input.addEventListener("keydown", (e) => {
-            if (e.key === "-" || e.key === "e" || e.key === "E") {
-              e.preventDefault();
-            }
-          });
-        });
-      });
     </script>
   </body>
 </html>
